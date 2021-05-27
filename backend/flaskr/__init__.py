@@ -13,6 +13,7 @@ def paginate_questions(request, selection):
     formatted_questions = [question.format() for question in selection]
     current_questions = formatted_questions[start:end]
     return current_questions
+    
 def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__)
@@ -39,7 +40,7 @@ def create_app(test_config=None):
     # Create an endpoint to handle GET requests
     # for all available categories.
     # '''
-    @app.route('/categories')
+    @app.route('/categories', methods=['GET'])
     def view_categories():
         categories = Category.query.all()
         formatted_categories = {
@@ -65,7 +66,7 @@ def create_app(test_config=None):
     # ten questions per page and pagination at the bottom of the screen for three pages.
     # Clicking on the page numbers should update the questions.
     # '''
-    @app.route('/questions')
+    @app.route('/questions', methods=['GET'])
     def view_questions():
         selection = Question.query.all()
         current_questions = paginate_questions(request, selection)
@@ -100,7 +101,7 @@ def create_app(test_config=None):
             current_questions = paginate_questions(request, selection)
             return jsonify({
                 'success': True,
-                'deleted': question_id,
+                'deleted': question.id,
                 'questions': current_questions,
                 'total_questions': len(Question.query.all())
             })
@@ -119,11 +120,16 @@ def create_app(test_config=None):
     @app.route('/questions/add', methods=['POST'])
     def create_question():
         body = request.get_json()
+        
         try:
             new_question = body.get('question', None)
             new_answer = body.get('answer', None)
             new_category = body.get('category', None)
             new_difficulty = body.get('difficulty', None)
+
+            if ((new_question is None) or (new_answer is None)
+                      or (new_difficulty is None) or (new_category is None)):
+                      abort(422)
 
             question = Question(question=new_question,
                 answer=new_answer,
@@ -131,7 +137,7 @@ def create_app(test_config=None):
                 difficulty=new_difficulty)
 
             question.insert()
-            selection = Question.query.order_by(question.id).all()
+            selection = Question.query.order_by(Question.id).all()
             current_questions = paginate_questions(request, selection)
 
             return jsonify({
@@ -160,38 +166,36 @@ def create_app(test_config=None):
     @app.route('/questions/search', methods=['POST'])
     def search_question():
         body = request.get_json()
+        search_term = body.get('searchTerm', None)
+        
         try:
-            new_search = body.get('searchTerm', None)
-            # If no search term a new question is being added
-            if new_search is None:
-                new_question = body.get('question', None)
-                new_answer = body.get('answer', None)
-                new_category = body.get('category', None)
-                new_difficulty = body.get('difficulty', None)
-                # Build new question from model
-                question = Question(
-                    question=new_question,
-                    answer=new_answer,
-                    category=new_category,
-                    difficulty=new_difficulty)
-                # Insert question into the DB
-                question.insert()
-                return jsonify({
-                    'success': True
-                })
-        # Search is being performed
-            else:
-                question_results = Question.query.filter(
-                    Question.question.ilike('%' + new_search + '%'))
-                current_results = paginate_questions(request, question_results)
-                return jsonify({
+            if search_term:
+                  selection = Question.query.order_by(Question.id).filter(Question.question.ilike('% {} %'.format(search_term) ))
+                  current_questions = paginate_questions(request, selection)
+
+            if search_term is None:
+                      abort(404)
+
+                 
+            return jsonify({
                     'success': True,
-                    'questions': current_results,
-                    'total_questions': len(question_results.all()),
-                    'current_category': {}
-                })
+                    'questions': current_questions,
+                    'total_questions': len(selection.all()),
+                    'current_category': None
+                })                    
+         
         except BaseException:
-            abort(422)
+            abort(404)             
+
+      
+            
+                       
+    
+                    
+            
+
+           
+               # question_results = 
     # TEST: Search by any phrase. The questions list will update to include
     # only question that include that string within their question.
     # Try using the word "title" to start.
@@ -222,46 +226,40 @@ def create_app(test_config=None):
     # This endpoint should take category and previous question parameters
     # and return a random questions within the given category,
     # if provided, and that is not one of the previous questions.
+
     @app.route('/quizzes', methods=['POST'])
-    def play_quiz():
-        # Init previous_questions to handle first question
-        previous_questions = []
+    def get_quiz_questions():
         body = request.get_json()
-        try:
-            # Get category id
-            cat_id = body['quiz_category']['id']
-            # A different way to get something from JSON
-            previous_questions = body.get('previous_questions', None)
-            # If ALL categories is selected
-            if cat_id == 0:
-                quiz_questions = Question.query.all()
-            # Else filter questions by cat_id
+        if not body:
+            abort(400)
+        previous_q = body['previous_questions']
+        category_id = body['quiz_category']['id']
+        category_id = str(int(category_id) + 1)
+        if category_id == 0:
+            if previous_q is not None:
+                questions = Question.query.filter(
+                    Question.id.notin_(previous_q)).all()
             else:
-                quiz_questions = Question.query.filter(
-                    Question.category == cat_id).all()
-            # Decide if the quiz is finished
-            if len(previous_questions) == len(quiz_questions):
-                return jsonify({
-                    'success': True,
-                    'question': False
-                })
-            # Randomly select a question that hasn't been asked
+                questions = Question.query.all()
+        else:
+            if previous_q is not None:
+                questions = Question.query.filter(
+                    Question.id.notin_(previous_q),
+                    Question.category == category_id).all()
             else:
-                current_question = random.choice(
-                    [question for question in quiz_questions if question.id not in previous_questions])
-                previous_questions.append(current_question.id)
-                return jsonify({
-                    'success': True,
-                    'question': {
-                        'question': current_question.question,
-                        'answer': current_question.answer,
-                        'id': current_question.id,
-                        'category': current_question.category,
-                        'difficulty': current_question.difficulty
-                    }
-                })
-        except BaseException:
-            abort(422)
+                questions = Question.query.filter(
+                    Question.category == category_id).all()
+        next_question = random.choice(questions).format()
+        if not next_question:
+            abort(404)
+        if next_question is None:
+            next_question = False
+        return jsonify({
+            'success': True,
+            'question': next_question
+        })
+
+   
     # TEST: In the "Play" tab, after a user selects "All" or a category,
     # one question at a time is displayed, the user is allowed to answer
     # and shown whether they were correct or not.
