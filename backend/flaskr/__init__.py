@@ -167,11 +167,16 @@ def create_app(test_config=None):
     def search_question():
         body = request.get_json()
         search_term = body.get('searchTerm', None)
+        print(search_term)
         
         try:
             if search_term:
-                  selection = Question.query.order_by(Question.id).filter(Question.question.ilike('% {} %'.format(search_term) ))
+                  selection = Question.query.filter(Question.question.ilike(f'% {search_term} %') ).all()
+                  
                   current_questions = paginate_questions(request, selection)
+
+            if len(selection) == 0:
+                abort(404)
 
             if search_term is None:
                       abort(404)
@@ -180,7 +185,7 @@ def create_app(test_config=None):
             return jsonify({
                     'success': True,
                     'questions': current_questions,
-                    'total_questions': len(selection.all()),
+                    'total_questions': len(selection),
                     'current_category': None
                 })                    
          
@@ -203,22 +208,51 @@ def create_app(test_config=None):
     # '''
     # @TODO:
     # Create a GET endpoint to get questions based on category.
+
     @app.route('/categories/<int:category_id>/questions')
     def view_questions_by_category(category_id):
+        body = request.get_json()
+
+        try:
+
+            questions = Question.query.filter(Question.category == str(category_id))
+
+            current_questions = paginate_questions(request, questions)
+
+            if len(current_questions) == 0:
+                abort(404)
+
+            return jsonify(
+                {
+                    "success": True,
+                    "questions": current_questions,
+                    "total_questions": len(current_questions),
+                    "current_category": category_id,
+                }
+            )
+
+        except:
+            abort(404)
+        
         questions = Question.query.filter(
             Question.category == str(category_id)).all()
         current_questions = paginate_questions(request, questions)
+
         if len(current_questions) == 0:
             abort(404)
+
         return jsonify({
             'success': True,
             'questions': current_questions,
             'total_questions': len(questions),
             'current_category': category_id
-        })
+             })
+
+      
+
     # TEST: In the "List" tab / main screen, clicking on one of the
     # categories in the left column will cause only questions of that
-    # category to be shown.
+    # category to be shown. (done)
     # '''
     # '''
     # @TODO:
@@ -227,37 +261,77 @@ def create_app(test_config=None):
     # and return a random questions within the given category,
     # if provided, and that is not one of the previous questions.
 
-    @app.route('/quizzes', methods=['POST'])
-    def get_quiz_questions():
+
+
+    @app.route("/quizzes", methods=["POST"])
+    def play_quiz():
         body = request.get_json()
-        if not body:
-            abort(400)
-        previous_q = body['previous_questions']
-        category_id = body['quiz_category']['id']
-        category_id = str(int(category_id) + 1)
-        if category_id == 0:
-            if previous_q is not None:
-                questions = Question.query.filter(
-                    Question.id.notin_(previous_q)).all()
+
+        previous_questions = body.get("previous_questions", [])
+        quiz_category = body.get("quiz_category", None)
+
+        try:
+
+            if quiz_category:
+
+                if quiz_category["id"] == 0:
+                    quiz = Question.query.all()
+
+                else:
+                    quiz = Question.query.filter_by(category=quiz_category["id"]).all()
+
+                if not quiz:
+                    return abort(422)
+                print(quiz)
+
+            selected = []
+
+            for question in quiz:
+                if question.id not in previous_questions:
+                    selected.append(question.format())
+
+            if len(selected) != 0:
+                result = random.choice(selected)
+                return jsonify({"success": True, "question": result})
+
             else:
-                questions = Question.query.all()
-        else:
-            if previous_q is not None:
-                questions = Question.query.filter(
-                    Question.id.notin_(previous_q),
-                    Question.category == category_id).all()
-            else:
-                questions = Question.query.filter(
-                    Question.category == category_id).all()
-        next_question = random.choice(questions).format()
-        if not next_question:
-            abort(404)
-        if next_question is None:
-            next_question = False
-        return jsonify({
-            'success': True,
-            'question': next_question
-        })
+                return jsonify({"question": False})
+
+        except:
+            abort(422)
+            print(sys.exc_info())
+    
+   # @app.route('/quizzes', methods=['POST'])
+    #def get_quiz_questions():
+     #   body = request.get_json()
+      #  if not body:
+       #     abort(400)
+        #previous_q = body['previous_questions']
+       # category_id = body['quiz_category']['id']
+       # category_id = str(int(category_id) + 1)
+      #  if category_id == 0:
+       #     if previous_q is not None:
+        #        questions = Question.query.filter(
+         #           Question.id.notin_(previous_q)).all()
+          #  else:
+           #     questions = Question.query.all()
+  #      else:
+   #         if previous_q is not None:
+    #            questions = Question.query.filter(
+     #               Question.id.notin_(previous_q),
+      #              Question.category == category_id).all()
+       #     else:
+        #        questions = Question.query.filter(
+         #           Question.category == category_id).all()
+        #next_question = random.choice(questions).format()
+        #if not next_question:
+         #   abort(404)
+        #if next_question is None:
+         #   next_question = False
+        #return jsonify({
+         #   'success': True,
+          #  'question': next_question
+        #})
 
    
     # TEST: In the "Play" tab, after a user selects "All" or a category,

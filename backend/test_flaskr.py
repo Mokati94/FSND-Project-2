@@ -125,14 +125,14 @@ class TriviaTestCase(unittest.TestCase):
 
     def test_delete_question(self):
         "Test for deleting a question"
-        res = self.client().delete('/questions/15')
+        res = self.client().delete('/questions/23')
         data = json.loads(res.data)
 
-        question = Question.query.filter(Question.id == 15).one_or_none()
+        question = Question.query.filter(Question.id == 23).one_or_none()
 
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data['success'], True)
-        self.assertEqual(data['deleted'], 15)
+        self.assertEqual(data['deleted'], 23)
         self.assertTrue(data['total_questions'])
         self.assertTrue(len(data['questions']))
         self.assertEqual(question, None)
@@ -150,7 +150,7 @@ class TriviaTestCase(unittest.TestCase):
     
     def test_search_functionality(self):
         "Test to check that the search functionality works"
-        res = self.client().post( '/questions/search', json={'searchTerm': 'Who'})
+        res = self.client().post( '/questions/search', json={'searchTerm': 'organ'})
         data = json.loads(res.data)
 
         self.assertEqual(res.status_code, 200)
@@ -166,7 +166,7 @@ class TriviaTestCase(unittest.TestCase):
 
         self.assertEqual(res.status_code, 404)
         self.assertEqual(data['success'], False)
-        self.assertEqual(data['message'], 'Resource not found')
+        self.assertEqual(data['message'], 'Resource not found!')
 
     
     def test_view_questions_by_category(self):
@@ -186,31 +186,39 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['success'], False)
         self.assertEqual(data['message'], 'Resource not found!')
 
-   #def test_play_quiz(self):
-    #    "Test to check that the game works"
-     #   res = self.client().post( '/quizzes')
-      #  data = json.loads(res.data)
 
-       # self.assertEqual(res.status_code, 200)
-        #self.assertEqual(data['success'], True)
-        #self.assertTrue(data['questions'])
-        #self.assertTrue(len(data['total_questions']))
+    def test_play_quiz(self):
+        res = self.client().post(
+            "/quizzes",
+            json={
+                "previous_questions": ["1"],
+                "quiz_category": {"type": "3", "id": 1},
+            },
+        )
+        data = json.loads(res.data)
 
+        quiz = Question.query.filter_by(category="3").all()
 
-  #  def test_fail_404_play_quiz(self):
-      #"Test to fail to find search term"
-   #     res = self.client().post('/quizzes')
-    #    data = json.loads(res.data)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data["success"], True)
+        self.assertTrue(data["question"])
 
-     #   self.assertEqual(res.status_code, 404)
-      #  self.assertEqual(data['success'], False)
-       # self.assertEqual(data['message'], 'Resource not found')
- 
+    def test_play_quiz_if_not_quiz(self):
+        res = self.client().post(
+            "/quizzes",
+            json={
+                "previous_questions": ["100"],
+                "quiz_category": {"type": "100", "id": 1000},
+            },
+        )
 
+        quiz = Question.query.filter_by(category="100").all()
 
-   
+        data = json.loads(res.data)
 
-
+        self.assertEqual(res.status_code, 422)
+        self.assertEqual(data["success"], False)
+        self.assertEqual(data["message"], "Unprocessable")
 
 
     
