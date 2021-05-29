@@ -469,7 +469,7 @@ Mafusi Mokati authored the API (__init__.py), test suite (test_flaskr.py), and t
 The rest of the project files were created by the brilliant team at Udacity as the starter code for project 2 of the Udacity Full Stack Web Developer Nanodegree program.  
 
 ## Acknowledgements 
-Shout out to Caryn for being such an amazing instructor and the awesome Udacity Mentors who are always willing to help out and assist us students with debugging our code and answering all our questions.  
+Specials thanks to Caryn for being such an amazing instructor and the awesome Udacity Mentors who are always willing to help out and assist us students with debugging our code and answering all our questions.  
 
 
 
