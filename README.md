@@ -3,7 +3,7 @@
 
 # Udacitrivia - Full Stack Trivia App
 
-Udacitrivia is a trivia app born out of the desired to create an intimate, fun, bonding exeperience for the employees and students of Udacity. The Udacitrivia app is a  web application designed to manage and play the trivia game using React for the frontend and Flask Python web framework to manage the backend.  
+Udacitrivia is a trivia app born out of the desire to create an intimate, fun, bonding exeperience for the employees and students of Udacity. The Udacitrivia app is a  web application designed to manage and play the trivia game using React for the frontend and Flask Python web framework to manage the backend.  
 
 The Udacitrivia app has the following functionality:
 
