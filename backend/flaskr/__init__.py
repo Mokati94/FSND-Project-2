@@ -5,6 +5,7 @@ from flask_cors import CORS, cross_origin
 import random
 from models import setup_db, Question, Category
 
+
 """
 ----------------------------------------------------------------
 Paginate_questions helper method.
@@ -12,6 +13,8 @@ Paginate_questions helper method.
 """
 QUESTIONS_PER_PAGE = 10
 # function to enable pagination in the "Get" endpoint
+
+
 def paginate_questions(request, selection):
     page = request.args.get('page', 1, type=int)
     start = (page - 1) * QUESTIONS_PER_PAGE
@@ -20,17 +23,20 @@ def paginate_questions(request, selection):
     current_questions = formatted_questions[start:end]
     return current_questions
 
+
 """
 --------------------------------------------
 App configuration
 --------------------------------------------
 """
+
+
 def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__)
     setup_db(app)
     cors = CORS(app, resources={r"/endpoint/*": {"origins": "*"}})
- 
+
     @app.after_request
     def after_request(response):
         response.headers.add(
@@ -41,13 +47,14 @@ def create_app(test_config=None):
             'GET,PUT,POST,DELETE,OPTIONS')
         return response
 
-      
+
 # ---------------------------------------------------------------------
 # View_Categories Endpoint: uses GET method to retrieve
 # and display all categories from the database.
 
 # ---------------------------------------------------------------------
-         
+
+
     @app.route('/categories')
     def view_categories():
         categories = Category.query.all()
@@ -65,13 +72,12 @@ def create_app(test_config=None):
         })
 
 
+# ----------------------------------------------------------------------------
+# View_Questions Endpoint: uses GET method to retrieve questions from the
+# database. Function includes pagination and displays results as 10 questions
+#  per page.
+# ----------------------------------------------------------------------------
 
-    
-# ----------------------------------------------------------------------------------
-# View_Questions Endpoint: uses GET method to retrieve questions from the database. 
-# Function includes pagination and displays results as 10 questions per page. 
-# -----------------------------------------------------------------------------------
-     
 
     @app.route('/questions')
     def view_questions():
@@ -93,13 +99,13 @@ def create_app(test_config=None):
             'categories': formatted_categories,
             'currentCategory': None
         })
-    
 
-#---------------------------------------------------------------------------------------------------
-# Delete_Question Endpoint: uses DELETE method to delete a question from the database
-# based on the question ID.
-#---------------------------------------------------------------------------------------------------
- 
+
+# ---------------------------------------------------------------------------------------------------
+# Delete_Question Endpoint: uses DELETE method to delete a question from
+# the database based on the question ID.
+# ---------------------------------------------------------------------------------------------------
+
 
     @app.route('/questions/<int:question_id>', methods=['DELETE'])
     def delete_question(question_id):
@@ -117,22 +123,21 @@ def create_app(test_config=None):
                 'questions': current_questions,
                 'total_questions': len(Question.query.all())
             })
-        except BaseException:
+        except Exception:
             abort(422)
 
 
-  
-#---------------------------------------------------------------------------------------------------
-# Create_Question Endpoint: uses POST method to add a new question in the database using JSON object. 
-#Requires answer, question, category and difficulty score from question form. 
-#---------------------------------------------------------------------------------------------------
-   
+# ----------------------------------------------------------------------------
+# Create_Question Endpoint: uses POST method to add a new question in the
+# database using JSON object.
+# Requires answer, question, category and difficulty score from question form.
+# ----------------------------------------------------------------------------
 
 
     @app.route('/questions/add', methods=['POST'])
     def create_question():
         body = request.get_json()
-        
+
         try:
             new_question = body.get('question', None)
             new_answer = body.get('answer', None)
@@ -140,13 +145,13 @@ def create_app(test_config=None):
             new_difficulty = body.get('difficulty', None)
 
             if ((new_question is None) or (new_answer is None)
-                      or (new_difficulty is None) or (new_category is None)):
-                      abort(422)
+                    or (new_difficulty is None) or (new_category is None)):
+                abort(422)
 
             question = Question(question=new_question,
-                answer=new_answer,
-                category=new_category,
-                difficulty=new_difficulty)
+                                answer=new_answer,
+                                category=new_category,
+                                difficulty=new_difficulty)
 
             question.insert()
             selection = Question.query.order_by(Question.id).all()
@@ -158,13 +163,14 @@ def create_app(test_config=None):
                 'questions': current_questions,
                 'total_questions': len(Question.query.all())
             })
-        except BaseException:
+        except Exception:
             abort(422)
-        
 
-# ---------------------------------------------------------------------------------------------------
-# Search_Question Endpoint: uses POST method to  get questions based on a search terms. #
-#---------------------------------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Search_Question Endpoint: uses POST method to  get questions based on
+#  a search term.
+# ----------------------------------------------------------------------------
 
 
     @app.route('/questions/search', methods=['POST'])
@@ -172,37 +178,36 @@ def create_app(test_config=None):
         body = request.get_json()
         search_term = body.get('searchTerm', None)
         print(search_term)
-        
+
         try:
             if search_term:
-                  selection = Question.query.filter(Question.question.ilike(f'% {search_term} %') ).all()
-                  
-                  current_questions = paginate_questions(request, selection)
+                selection = Question.query.filter(
+                    Question.question.ilike(f'% {search_term} %')).all()
+
+                current_questions = paginate_questions(request, selection)
 
             if len(selection) == 0:
                 abort(404)
 
             if search_term is None:
-                      abort(404)
+                abort(404)
 
-                 
             return jsonify({
-                    'success': True,
-                    'questions': current_questions,
-                    'total_questions': len(selection),
-                    'current_category': None
-                })                    
-         
-        except BaseException:
-            abort(404)             
+                'success': True,
+                'questions': current_questions,
+                'total_questions': len(selection),
+                'current_category': None
+            })
+
+        except Exception:
+            abort(404)
 
 
-    
-# ---------------------------------------------------------------------------------------------------
-# View_Question_By_Category Endpoint: uses GET method to delete a question from the database
-# based on the question ID.
-# ---------------------------------------------------------------------------------------------------
-    
+# ---------------------------------------------------------------------------
+# View_Question_By_Category Endpoint: uses GET method to delete a question
+# from the database based on the question ID.
+# ----------------------------------------------------------------------------
+
 
     @app.route('/categories/<int:category_id>/questions')
     def view_questions_by_category(category_id):
@@ -210,7 +215,8 @@ def create_app(test_config=None):
 
         try:
 
-            questions = Question.query.filter(Question.category == str(category_id))
+            questions = Question.query.filter(
+                Question.category == str(category_id))
 
             current_questions = paginate_questions(request, questions)
 
@@ -226,9 +232,9 @@ def create_app(test_config=None):
                 }
             )
 
-        except:
+        except Exception:
             abort(404)
-        
+
         questions = Question.query.filter(
             Question.category == str(category_id)).all()
         current_questions = paginate_questions(request, questions)
@@ -241,18 +247,15 @@ def create_app(test_config=None):
             'questions': current_questions,
             'total_questions': len(questions),
             'current_category': category_id
-             })
+        })
 
-      
-     
-# ---------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------
 # Play_Quiz Endpoint: uses POST method to get questions to play the quiz.
-# Takes category and previous question parameters and returns random questions 
-# within the given category, if given, that is not one of the previous questions.
-#---------------------------------------------------------------------------------------------------
-     
-
-
+# Takes category and previous question parameters and returns random questions
+# within the given category, if given, that is not one of
+# the previous questions.
+# ----------------------------------------------------------------------------
 
     @app.route("/quizzes", methods=["POST"])
     def play_quiz():
@@ -269,7 +272,8 @@ def create_app(test_config=None):
                     quiz = Question.query.all()
 
                 else:
-                    quiz = Question.query.filter_by(category=quiz_category["id"]).all()
+                    quiz = Question.query.filter_by(
+                        category=quiz_category["id"]).all()
 
                 if not quiz:
                     return abort(422)
@@ -288,19 +292,17 @@ def create_app(test_config=None):
             else:
                 return jsonify({"question": False})
 
-        except:
+        except Exception:
             abort(422)
             print(sys.exc_info())
-    
 
-    
+
 # ---------------------------------------------------------------------------------------------------
-# Error Handlers : put in place to handle all expected errors. 
-# 404: Used when the resource can be found. 
-# 422: Used when the request is unprocessable 
+# Error Handlers : put in place to handle all expected errors.
+# 404: Used when the resource can be found.
+# 422: Used when the request is unprocessable
 # ---------------------------------------------------------------------------------------------------
-    
-        # Error handler creation
+
     @app.errorhandler(404)
     def not_found(error):
         return jsonify({
@@ -308,6 +310,7 @@ def create_app(test_config=None):
             'error': 404,
             'message': 'Resource not found!'
         }), 404
+
     @app.errorhandler(422)
     def unproccesable(error):
         return jsonify({
@@ -317,9 +320,7 @@ def create_app(test_config=None):
         }), 422
 
 
-     
 # ---------------------------------------------
-# Return app: used to run the Flask app. 
+# Return app: used to run the Flask app.
 # ----------------------------------------------
-       
     return app
