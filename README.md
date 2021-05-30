@@ -3,7 +3,7 @@
 
 # Udacitrivia - Full Stack Trivia App
 
-Udacitrivia is a trivia app born out of the desired to create an intimate, fun, bonding exeperiences for the employees and students of Udacity. The Udacitrivia app is a  web application designed to manage and play the trivia game using React for the frontend and Flask Python web framework to manage the backend.  
+Udacitrivia is a trivia app born out of the desire to create an intimate, fun, bonding exeperience for the employees and students of Udacity. The Udacitrivia app is a  web application designed to manage and play the trivia game using React for the frontend and Flask Python web framework to manage the backend.  
 
 The Udacitrivia app has the following functionality:
 
@@ -469,17 +469,7 @@ Mafusi Mokati authored the API (__init__.py), test suite (test_flaskr.py), and t
 The rest of the project files were created by the brilliant team at Udacity as the starter code for project 2 of the Udacity Full Stack Web Developer Nanodegree program.  
 
 ## Acknowledgements 
-Shout out to Caryn for being such an amazing instructor and the awesome Udacity Mentors who are always willing to help out and assist us students with debugging our code and answering all our questions.  
-
-
-
-
-
-
-
-
-
-
+Special thanks to Caryn for being such an amazing instructor and the awesome Udacity Mentors who are always willing to help out and assist us students with debugging our code and answering all our questions.  
 
 
 
